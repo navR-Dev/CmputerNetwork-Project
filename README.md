@@ -17,9 +17,9 @@ Now, open two command terminal windows (NOT the terminal in the IDE) and run the
 You should see the messages 'Welcome X' in one terminal and 'Welcome O' in the other terminal. X will move first always.
 To make a move, type `MOVE [0-8]` when it is your turn. You cannot write to already filled places.
 Please note:- The board is structured as follows:
-0 1 2
-3 4 5
-6 7 8
+0 1 2<br>
+3 4 5<br>
+6 7 8<br>
 
 ## How to create the SSL documents:
 1. Run the command `openssl genpkey -algorithm RSA -out server-key.pem -aes256` and create a password when prompted.
