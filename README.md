@@ -16,7 +16,7 @@ If the server does not encounter any errors, you should see a message in the ter
 Now, open two command terminal windows (NOT the terminal in the IDE) and run the commands `ncat --ssl -C localhost 58901`.
 You should see the messages 'Welcome X' in one terminal and 'Welcome O' in the other terminal. X will move first always.
 To make a move, type `MOVE [0-8]` when it is your turn. You cannot write to already filled places.
-Please note:- The board is structured as follows:
+Please note:- The board is structured as follows:<br>
 0 1 2<br>
 3 4 5<br>
 6 7 8<br>
