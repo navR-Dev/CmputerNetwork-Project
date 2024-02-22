@@ -1,35 +1,12 @@
-// A server for Tic-tac toe games.
-//
-// The first two client connections become X and O for the first game; the next
-// two connections face off in the second game, and so on. Games run concurrently.
-//
-// The games use TTTP, the "Tic Tac Toe Protocol" which I just made up:
-//
-// Client -> Server
-//     MOVE <n>
-//     QUIT
-//
-// Server -> Client
-//     WELCOME <char>
-//     VALID_MOVE
-//     OTHER_PLAYER_MOVED <n>
-//     OTHER_PLAYER_LEFT
-//     VICTORY
-//     DEFEAT
-//     TIE
-//     MESSAGE <text>
-//
-// The cells are numbered top-to-bottom, left-to-right, as 0..8.
-
 const net = require("net");
 const fs = require("fs");
 const tls = require("tls");
 
 let game = null;
 const options = {
-  key: fs.readFileSync("server-key.pem", "utf8"), // Read key as UTF-8 string
+  key: fs.readFileSync("server-key.pem", "utf8"),
   cert: fs.readFileSync("server-cert.pem"),
-  passphrase: "naveen", // Provide your passphrase here
+  passphrase: "naveen",
 };
 
 const server = tls
@@ -57,10 +34,6 @@ const server = tls
   });
 
 class Game {
-  // A board has nine squares. Each square is either unowned or it is owned by a
-  // player. So we use a simple array of player references. If null, the corresponding
-  // square is unowned, otherwise the array cell stores a reference to the player that
-  // owns it.
   constructor() {
     this.board = Array(9).fill(null);
   }
