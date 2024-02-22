@@ -11,7 +11,7 @@ This github repository contains the all the code written for a local multiplayer
 Make sure to add nmap and OpenSSL to your system's path.
 
 ## How to run:
-Download all the code and open in your preferred coding environment, then run the file `gameserver.js` using the command `node gameserver.js`.
+Download all the code and open in your preferred coding environment, run npm install, then run the file `gameserver.js` using the command `node gameserver.js`.
 If the server does not encounter any errors, you should see a message in the terminal.
 Now, open two command terminal windows (NOT the terminal in the IDE) and run the commands `ncat --ssl -C localhost 58901`.
 You should see the messages 'Welcome X' in one terminal and 'Welcome O' in the other terminal. X will move first always.
