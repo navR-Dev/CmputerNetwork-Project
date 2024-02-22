@@ -13,9 +13,9 @@ Make sure to add nmap and OpenSSL to your system's path.
 ## How to run:
 Download all the code and open in your preferred coding environment, run npm install, then run the file `gameserver.js` using the command `node gameserver.js`.
 If the server does not encounter any errors, you should see a message in the terminal.
-Now, open two command terminal windows (NOT the terminal in the IDE) and run the commands `ncat --ssl -C localhost 58901`.
+Now, open two command terminal windows and run the commands `node gameclient.js`.
 You should see the messages 'Welcome X' in one terminal and 'Welcome O' in the other terminal. X will move first always.
-To make a move, type `MOVE [0-8]` when it is your turn. You cannot write to already filled places.
+To make a move, type `move [0-8]` when it is your turn. You cannot write to already filled places.
 Please note:- The board is structured as follows:<br>
 0 1 2<br>
 3 4 5<br>
@@ -25,3 +25,5 @@ Please note:- The board is structured as follows:<br>
 1. Run the command `openssl genpkey -algorithm RSA -out server-key.pem -aes256` and create a password when prompted.
 2. Run the command `openssl req -new -key server-key.pem -out server-csr.pem` and fill in the details you wish to add.
 3. Run the command `openssl x509 -req -days 365 -in server-csr.pem -signkey server-key.pem -out server-cert.pem`.
+
+For client documents, run the same commands but with the required names (like client-key.pem, client-csr.pem and client-cert.pem)
