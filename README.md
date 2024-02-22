@@ -25,3 +25,5 @@ Please note:- The board is structured as follows:<br>
 1. Run the command `openssl genpkey -algorithm RSA -out server-key.pem -aes256` and create a password when prompted.
 2. Run the command `openssl req -new -key server-key.pem -out server-csr.pem` and fill in the details you wish to add.
 3. Run the command `openssl x509 -req -days 365 -in server-csr.pem -signkey server-key.pem -out server-cert.pem`.
+
+For client documents, run the same commands but with the required names (like client-key.pem, client-csr.pem and client-cert.pem)
