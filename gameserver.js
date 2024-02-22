@@ -47,6 +47,10 @@ const server = tls
       game.playerO = new Player(game, socket, "O");
       game = null;
     }
+    if (!socket.authorized) {
+      socket.write("Unauthorized. Please connect using SSL/TLS.\n");
+      socket.destroy();
+    }
   })
   .listen(58901, () => {
     console.log("Tic Tac Toe Server is Running");
