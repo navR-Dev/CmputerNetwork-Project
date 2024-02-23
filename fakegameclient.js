@@ -1,5 +1,4 @@
-const fs = require("fs");
-const tls = require("tls");
+const net = require("net");
 const readline = require("readline");
 
 const rl = readline.createInterface({
@@ -7,14 +6,9 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-const options = {
-  key: fs.readFileSync("client-key.pem"),
-  cert: fs.readFileSync("client-cert.pem"),
-  passphrase: "naveen",
-  rejectUnauthorized: false,
-};
+const client = new net.Socket();
 
-const client = tls.connect(58901, "192.168.56.1", options, () => {
+client.connect(58901, "192.168.56.1", () => {
   console.log("Connected to Tic Tac Toe Server");
 
   client.on("data", (data) => {

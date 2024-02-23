@@ -1,33 +1,40 @@
-const net = require("net");
 const fs = require("fs");
 const tls = require("tls");
 
 let game = null;
+
 const options = {
   key: fs.readFileSync("server-key.pem", "utf8"),
   cert: fs.readFileSync("server-cert.pem"),
   passphrase: "naveen",
 };
 
-const server = tls
-  .createServer(options, (socket) => {
-    console.log(
-      "Connection from",
-      socket.remoteAddress,
-      "port",
-      socket.remotePort
-    );
-    if (game === null) {
-      game = new Game();
-      game.playerX = new Player(game, socket, "X");
-    } else {
-      game.playerO = new Player(game, socket, "O");
-      game = null;
-    }
-  })
-  .listen(58901, () => {
-    console.log("Tic Tac Toe Server is Running");
-  });
+const server = tls.createServer(options, (socket) => {
+  if (!socket.encrypted) {
+    console.log("Connection is not secure. Destroying the connection.");
+    socket.destroy();
+    return;
+  }
+
+  console.log(
+    "Connection from",
+    socket.remoteAddress,
+    "port",
+    socket.remotePort
+  );
+
+  if (game === null) {
+    game = new Game();
+    game.playerX = new Player(game, socket, "X");
+  } else {
+    game.playerO = new Player(game, socket, "O");
+    game = null;
+  }
+});
+
+server.listen(58901, () => {
+  console.log("Tic Tac Toe Server is Running");
+});
 
 class Game {
   constructor() {
@@ -90,7 +97,7 @@ class Player {
         try {
           game.move(location, this);
           this.send("VALID_MOVE");
-          this.opponent.send(`OPPONENT_MOVED ${location}`);
+          this.opponent.send(`OTHER_PLAYER_MOVED ${location}`);
           if (this.game.hasWinner()) {
             this.send("VICTORY");
             this.opponent.send("DEFEAT");
