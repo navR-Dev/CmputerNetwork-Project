@@ -21,6 +21,13 @@ const server = tls.createServer(options, (socket) => {
     ongoingGames.push(game);
   }
 
+  console.log(
+    "Connection from",
+    socket.remoteAddress,
+    "port",
+    socket.remotePort
+  );
+
   const player = new Player(game, socket, game.getNextMark());
   game.addPlayer(player);
 
