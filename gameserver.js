@@ -32,7 +32,7 @@ const server = tls.createServer(options, (socket) => {
   }
 });
 
-server.listen(58901, () => {
+server.listen(58901, "0.0.0.0", () => {
   console.log("Tic Tac Toe Server is Running");
 });
 

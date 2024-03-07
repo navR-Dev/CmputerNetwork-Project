@@ -8,7 +8,7 @@ const rl = readline.createInterface({
 
 const client = new net.Socket();
 
-client.connect(58901, "192.168.56.1", () => {
+client.connect(58901, "0.0.0.0", () => {
   console.log("Connected to Tic Tac Toe Server");
 
   client.on("data", (data) => {

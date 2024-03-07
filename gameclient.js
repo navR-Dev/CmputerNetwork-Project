@@ -14,7 +14,7 @@ const options = {
   rejectUnauthorized: false,
 };
 
-const client = tls.connect(58901, "192.168.56.1", options, () => {
+const client = tls.connect(58901, "0.0.0.0", options, () => {
   console.log("Connected to Tic Tac Toe Server");
 
   client.on("data", (data) => {
