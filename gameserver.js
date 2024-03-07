@@ -1,7 +1,8 @@
 const fs = require("fs");
 const tls = require("tls");
+const firewall = require("node-firewall");
 
-const ongoingGames = [];
+let game = null;
 
 const options = {
   key: fs.readFileSync("server-key.pem", "utf8"),
@@ -9,23 +10,41 @@ const options = {
   passphrase: "naveen",
 };
 
+firewall
+  .addRule({
+    name: "GameServerPort",
+    port: 58901,
+    protocol: "TCP",
+    direction: "in",
+    action: "allow",
+  })
+  .then(() => {
+    console.log("Firewall rule added successfully.");
+  })
+  .catch((err) => {
+    console.error("Error adding firewall rule:", err);
+  });
+
 const server = tls.createServer(options, (socket) => {
   if (!socket.encrypted) {
+    console.log("Connection is not secure. Destroying the connection.");
     socket.destroy();
     return;
   }
 
-  let game = ongoingGames.find((g) => !g.isFull());
-  if (!game) {
+  console.log(
+    "Connection from",
+    socket.remoteAddress,
+    "port",
+    socket.remotePort
+  );
+
+  if (game === null) {
     game = new Game();
-    ongoingGames.push(game);
-  }
-
-  const player = new Player(game, socket, game.getNextMark());
-  game.addPlayer(player);
-
-  if (game.isFull()) {
-    game.start();
+    game.playerX = new Player(game, socket, "X");
+  } else {
+    game.playerO = new Player(game, socket, "O");
+    game = null;
   }
 });
 
@@ -35,27 +54,7 @@ server.listen(58901, "0.0.0.0", () => {
 
 class Game {
   constructor() {
-    this.players = [];
     this.board = Array(9).fill(null);
-    this.currentPlayerIndex = 0;
-  }
-
-  addPlayer(player) {
-    this.players.push(player);
-  }
-
-  isFull() {
-    return this.players.length === 2;
-  }
-
-  getNextMark() {
-    return this.players.length === 0 ? "X" : "O";
-  }
-
-  start() {
-    this.players.forEach((player) => {
-      player.send("GAME_START");
-    });
   }
 
   hasWinner() {
@@ -100,7 +99,7 @@ class Player {
       game.currentPlayer = this;
       this.send("MESSAGE Waiting for opponent to connect");
     } else {
-      this.opponent = game.players[0];
+      this.opponent = game.playerX;
       this.opponent.opponent = this;
       this.opponent.send("MESSAGE Your move");
     }
