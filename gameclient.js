@@ -63,6 +63,18 @@ function handleServerMessage(message) {
       console.log("It's a tie! The game is over.");
       client.end();
       break;
+    case "BOARD_STATE":
+      console.log("Current Board:");
+      console.log(message.substring(11));
+      break;
+    case "GAME_ENDED":
+      console.log("The game has ended.");
+      client.end(); // Close connection to the server
+      break;
+    case "VICTORY_MESSAGE":
+      console.log("Congratulations! You won!");
+      client.end();
+      break;
   }
 }
 

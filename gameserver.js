@@ -11,17 +11,9 @@ const options = {
 
 const server = tls.createServer(options, (socket) => {
   if (!socket.encrypted) {
-    console.log("Connection is not secure. Destroying the connection.");
     socket.destroy();
     return;
   }
-
-  console.log(
-    "Connection from",
-    socket.remoteAddress,
-    "port",
-    socket.remotePort
-  );
 
   if (game === null) {
     game = new Game();
@@ -93,7 +85,6 @@ class Game {
     this.currentPlayer = this.currentPlayer.opponent;
   }
 
-  // Function to display the board
   displayBoard() {
     console.log("Current Board:");
     for (let row of this.board) {
@@ -125,7 +116,8 @@ class Player {
       const command = buffer.toString("utf-8").trim();
       if (command === "QUIT") {
         socket.destroy();
-      } else if (/^MOVE \d+$/.test(command)) {
+      } // Inside the "MOVE" command handling
+      else if (/^MOVE \d+$/.test(command)) {
         const location = Number(command.substring(5));
         try {
           game.move(location, this);
@@ -134,24 +126,47 @@ class Player {
           if (this.game.hasWinner()) {
             this.send("VICTORY");
             this.opponent.send("DEFEAT");
+            this.gameEnded();
           } else if (this.game.boardFilledUp()) {
             [this, this.opponent].forEach((p) => p.send("TIE"));
+            this.gameEnded();
+          } else {
+            this.game.displayBoard();
+            this.sendBoardState();
+            this.opponent.sendBoardState();
           }
-          this.game.displayBoard();
         } catch (e) {
           this.send(`MESSAGE ${e.message}`);
         }
+      }
+
+      function gameEnded() {
+        if (!this.opponent) return;
+        this.opponent.send("GAME_ENDED");
+        this.send("GAME_ENDED");
+        this.opponent.socket.end();
+        this.socket.end();
       }
     });
 
     socket.on("close", () => {
       try {
         this.opponent.send("OTHER_PLAYER_LEFT");
+        this.game.gameEnded();
       } catch (e) {}
     });
   }
 
   send(message) {
     this.socket.write(`${message}\n`);
+  }
+
+  sendBoardState() {
+    const boardState = this.game.board
+      .map((row) =>
+        row.map((cell) => (cell[0] !== "0" ? cell[0] : " ")).join(" ")
+      )
+      .join("\n");
+    this.send("BOARD_STATE\n" + boardState);
   }
 }
