@@ -1,7 +1,7 @@
 const fs = require("fs");
 const tls = require("tls");
 
-const ongoingGames = [];
+let game = null;
 
 const options = {
   key: fs.readFileSync("server-key.pem", "utf8"),
@@ -11,14 +11,9 @@ const options = {
 
 const server = tls.createServer(options, (socket) => {
   if (!socket.encrypted) {
+    console.log("Connection is not secure. Destroying the connection.");
     socket.destroy();
     return;
-  }
-
-  let game = ongoingGames.find((g) => !g.isFull());
-  if (!game) {
-    game = new Game();
-    ongoingGames.push(game);
   }
 
   console.log(
@@ -28,41 +23,38 @@ const server = tls.createServer(options, (socket) => {
     socket.remotePort
   );
 
-  const player = new Player(game, socket, game.getNextMark());
-  game.addPlayer(player);
-
-  if (game.isFull()) {
-    game.start();
+  if (game === null) {
+    game = new Game();
+    game.playerX = new Player(game, socket, "X");
+  } else {
+    game.playerO = new Player(game, socket, "O");
+    game = null;
   }
 });
 
-server.listen(58901, "192.168.17.5", () => {
+server.listen(58901, "192.168.1.40", () => {
   console.log("Tic Tac Toe Server is Running");
 });
 
 class Game {
   constructor() {
-    this.players = [];
-    this.board = Array(9).fill(null);
-    this.currentPlayerIndex = 0;
-  }
-
-  addPlayer(player) {
-    this.players.push(player);
-  }
-
-  isFull() {
-    return this.players.length === 2;
-  }
-
-  getNextMark() {
-    return this.players.length === 0 ? "X" : "O";
-  }
-
-  start() {
-    this.players.forEach((player) => {
-      player.send("GAME_START");
-    });
+    this.board = [
+      [
+        ["0", "o"],
+        ["0", "o"],
+        ["0", "o"],
+      ],
+      [
+        ["0", "o"],
+        ["0", "o"],
+        ["0", "o"],
+      ],
+      [
+        ["0", "o"],
+        ["0", "o"],
+        ["0", "o"],
+      ],
+    ];
   }
 
   hasWinner() {
@@ -78,12 +70,15 @@ class Game {
       [2, 4, 6],
     ];
     return wins.some(
-      ([x, y, z]) => b[x] !== null && b[x] === b[y] && b[y] === b[z]
+      ([x, y, z]) =>
+        b[Math.floor(x / 3)][x % 3][0] !== "0" &&
+        b[Math.floor(x / 3)][x % 3][0] === b[Math.floor(y / 3)][y % 3][0] &&
+        b[Math.floor(y / 3)][y % 3][0] === b[Math.floor(z / 3)][z % 3][0]
     );
   }
 
   boardFilledUp() {
-    return this.board.every((square) => square !== null);
+    return this.board.every((row) => row.every(([filled]) => filled !== "0"));
   }
 
   move(location, player) {
@@ -91,11 +86,25 @@ class Game {
       throw new Error("Not your turn");
     } else if (!player.opponent) {
       throw new Error("You don’t have an opponent yet");
-    } else if (this.board[location] !== null) {
+    } else if (this.board[Math.floor(location / 3)][location % 3][0] !== "0") {
       throw new Error("Cell already occupied");
     }
-    this.board[location] = this.currentPlayer;
+    this.board[Math.floor(location / 3)][location % 3] = [player.mark, "o"];
     this.currentPlayer = this.currentPlayer.opponent;
+  }
+
+  // Function to display the board
+  displayBoard() {
+    console.log("Current Board:");
+    for (let row of this.board) {
+      let rowString = "";
+      for (let cell of row) {
+        rowString += cell[0] !== "0" ? cell[0] : " ";
+        rowString += " ";
+      }
+      console.log(rowString);
+    }
+    console.log("\n");
   }
 }
 
@@ -107,7 +116,7 @@ class Player {
       game.currentPlayer = this;
       this.send("MESSAGE Waiting for opponent to connect");
     } else {
-      this.opponent = game.players[0];
+      this.opponent = game.playerX;
       this.opponent.opponent = this;
       this.opponent.send("MESSAGE Your move");
     }
@@ -128,6 +137,7 @@ class Player {
           } else if (this.game.boardFilledUp()) {
             [this, this.opponent].forEach((p) => p.send("TIE"));
           }
+          this.game.displayBoard();
         } catch (e) {
           this.send(`MESSAGE ${e.message}`);
         }
