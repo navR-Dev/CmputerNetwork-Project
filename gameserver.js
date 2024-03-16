@@ -1,32 +1,15 @@
+const WebSocket = require("ws");
+const http = require("http");
 const fs = require("fs");
-const tls = require("tls");
+
+const server = http.createServer({
+  key: fs.readFileSync("server-key.pem"),
+  cert: fs.readFileSync("server-cert.pem"),
+});
+
+const wss = new WebSocket.Server({ server });
 
 let game = null;
-
-const options = {
-  key: fs.readFileSync("server-key.pem", "utf8"),
-  cert: fs.readFileSync("server-cert.pem"),
-  passphrase: "naveen",
-};
-
-const server = tls.createServer(options, (socket) => {
-  if (!socket.encrypted) {
-    socket.destroy();
-    return;
-  }
-
-  if (game === null) {
-    game = new Game();
-    game.playerX = new Player(game, socket, "X");
-  } else {
-    game.playerO = new Player(game, socket, "O");
-    game = null;
-  }
-});
-
-server.listen(58901, "192.168.1.40", () => {
-  console.log("Tic Tac Toe Server is Running");
-});
 
 class Game {
   constructor() {
@@ -68,41 +51,16 @@ class Game {
         b[Math.floor(y / 3)][y % 3][0] === b[Math.floor(z / 3)][z % 3][0]
     );
   }
-
-  boardFilledUp() {
-    return this.board.every((row) => row.every(([filled]) => filled !== "0"));
-  }
-
-  move(location, player) {
-    if (player !== this.currentPlayer) {
-      throw new Error("Not your turn");
-    } else if (!player.opponent) {
-      throw new Error("You don’t have an opponent yet");
-    } else if (this.board[Math.floor(location / 3)][location % 3][0] !== "0") {
-      throw new Error("Cell already occupied");
-    }
-    this.board[Math.floor(location / 3)][location % 3] = [player.mark, "o"];
-    this.currentPlayer = this.currentPlayer.opponent;
-  }
-
-  displayBoard() {
-    console.log("Current Board:");
-    for (let row of this.board) {
-      let rowString = "";
-      for (let cell of row) {
-        rowString += cell[0] !== "0" ? cell[0] : " ";
-        rowString += " ";
-      }
-      console.log(rowString);
-    }
-    console.log("\n");
-  }
 }
 
 class Player {
-  constructor(game, socket, mark) {
-    Object.assign(this, { game, socket, mark });
+  constructor(game, ws, mark) {
+    this.game = game;
+    this.ws = ws;
+    this.mark = mark;
+
     this.send(`WELCOME ${mark}`);
+
     if (mark === "X") {
       game.currentPlayer = this;
       this.send("MESSAGE Waiting for opponent to connect");
@@ -112,12 +70,11 @@ class Player {
       this.opponent.send("MESSAGE Your move");
     }
 
-    socket.on("data", (buffer) => {
-      const command = buffer.toString("utf-8").trim();
+    ws.on("message", (message) => {
+      const command = message.toString("utf-8").trim();
       if (command === "QUIT") {
-        socket.destroy();
-      } // Inside the "MOVE" command handling
-      else if (/^MOVE \d+$/.test(command)) {
+        ws.close();
+      } else if (/^MOVE \d+$/.test(command)) {
         const location = Number(command.substring(5));
         try {
           game.move(location, this);
@@ -131,7 +88,6 @@ class Player {
             [this, this.opponent].forEach((p) => p.send("TIE"));
             this.gameEnded();
           } else {
-            this.game.displayBoard();
             this.sendBoardState();
             this.opponent.sendBoardState();
           }
@@ -139,17 +95,9 @@ class Player {
           this.send(`MESSAGE ${e.message}`);
         }
       }
-
-      function gameEnded() {
-        if (!this.opponent) return;
-        this.opponent.send("GAME_ENDED");
-        this.send("GAME_ENDED");
-        this.opponent.socket.end();
-        this.socket.end();
-      }
     });
 
-    socket.on("close", () => {
+    ws.on("close", () => {
       try {
         this.opponent.send("OTHER_PLAYER_LEFT");
         this.game.gameEnded();
@@ -158,7 +106,7 @@ class Player {
   }
 
   send(message) {
-    this.socket.write(`${message}\n`);
+    this.ws.send(message);
   }
 
   sendBoardState() {
@@ -170,3 +118,17 @@ class Player {
     this.send("BOARD_STATE\n" + boardState);
   }
 }
+
+wss.on("connection", (ws) => {
+  if (game === null) {
+    game = new Game();
+    game.playerX = new Player(game, ws, "X");
+  } else {
+    game.playerO = new Player(game, ws, "O");
+    game = null;
+  }
+});
+
+server.listen(58901, () => {
+  console.log("Tic Tac Toe Server is Running");
+});
