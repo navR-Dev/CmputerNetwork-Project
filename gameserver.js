@@ -136,7 +136,7 @@ class Player {
   }
 }
 
-let clients = []; // Array to store connected clients
+let clients = [];
 
 wss.on("connection", (ws) => {
   console.log("Client Connected!");
