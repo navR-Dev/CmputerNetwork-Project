@@ -14,22 +14,24 @@ let game = null;
 class Game {
   constructor() {
     this.board = [
-      [
-        ["0", "o"],
-        ["0", "o"],
-        ["0", "o"],
-      ],
-      [
-        ["0", "o"],
-        ["0", "o"],
-        ["0", "o"],
-      ],
-      [
-        ["0", "o"],
-        ["0", "o"],
-        ["0", "o"],
-      ],
+      ["0", "0", "0"],
+      ["0", "0", "0"],
+      ["0", "0", "0"],
     ];
+    this.currentPlayer = null;
+    this.playerX = null;
+    this.playerO = null;
+  }
+
+  move(location, player) {
+    const row = Math.floor(location / 3);
+    const col = location % 3;
+
+    if (this.board[row][col] === "0") {
+      this.board[row][col] = player.mark;
+    } else {
+      throw new Error("Invalid move. Cell already occupied.");
+    }
   }
 
   hasWinner() {
@@ -46,10 +48,25 @@ class Game {
     ];
     return wins.some(
       ([x, y, z]) =>
-        b[Math.floor(x / 3)][x % 3][0] !== "0" &&
-        b[Math.floor(x / 3)][x % 3][0] === b[Math.floor(y / 3)][y % 3][0] &&
-        b[Math.floor(y / 3)][y % 3][0] === b[Math.floor(z / 3)][z % 3][0]
+        b[Math.floor(x / 3)][x % 3] !== "0" &&
+        b[Math.floor(x / 3)][x % 3] === b[Math.floor(y / 3)][y % 3] &&
+        b[Math.floor(y / 3)][y % 3] === b[Math.floor(z / 3)][z % 3]
     );
+  }
+
+  boardFilledUp() {
+    return this.board.every((row) => row.every((cell) => cell !== "0"));
+  }
+
+  gameEnded() {
+    this.playerX = null;
+    this.playerO = null;
+    this.currentPlayer = null;
+    this.board = [
+      ["0", "0", "0"],
+      ["0", "0", "0"],
+      ["0", "0", "0"],
+    ];
   }
 }
 
@@ -119,13 +136,21 @@ class Player {
   }
 }
 
+let clients = []; // Array to store connected clients
+
 wss.on("connection", (ws) => {
-  if (game === null) {
+  console.log("Client Connected!");
+
+  clients.push(ws);
+  console.log(clients.length);
+
+  if (clients.length === 1) {
     game = new Game();
-    game.playerX = new Player(game, ws, "X");
-  } else {
-    game.playerO = new Player(game, ws, "O");
+    game.playerX = new Player(game, clients[0], "X");
+  } else if (clients.length === 2) {
+    game.playerO = new Player(game, clients[1], "O");
     game = null;
+    clients = [];
   }
 });
 

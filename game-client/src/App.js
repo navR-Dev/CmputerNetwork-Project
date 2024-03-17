@@ -9,7 +9,8 @@ const App = () => {
   const [ws, setWs] = useState(null);
 
   useEffect(() => {
-    const newWs = new WebSocket("wss://192.168.1.40:58901"); // Replace with your WebSocket server URL
+    const newWs = new WebSocket("ws://192.168.1.40:58901");
+    console.log("Connecting");
 
     newWs.onopen = () => {
       console.log("Connected to Tic Tac Toe Server");
@@ -26,9 +27,10 @@ const App = () => {
 
     setWs(newWs);
 
-    return () => {
+    /*return () => {
+      console.log("Closing");
       newWs.close();
-    };
+    };*/
   }, []);
 
   const handleServerMessage = (message) => {
@@ -50,31 +52,41 @@ const App = () => {
         break;
       case "OTHER_PLAYER_LEFT":
         setMessage("Your opponent has left the game.");
-        ws.close();
+        if (ws) {
+          ws.close();
+        }
         break;
       case "VICTORY":
         setMessage("Congratulations! You won!");
-        ws.close();
+        if (ws) {
+          ws.close();
+        }
         break;
       case "DEFEAT":
         setMessage("Sorry, you lost. Better luck next time.");
-        ws.close();
+        if (ws) {
+          ws.close();
+        }
         break;
       case "TIE":
         setMessage("It's a tie! The game is over.");
-        ws.close();
-        break;
-      case "BOARD_STATE":
-        updateBoardState(message.substring(11));
+        if (ws) {
+          ws.close();
+        }
         break;
       case "GAME_ENDED":
         setMessage("The game has ended.");
-        ws.close();
+        if (ws) {
+          ws.close();
+        }
         break;
       case "VICTORY_MESSAGE":
         setMessage("Congratulations! You won!");
-        ws.close();
+        if (ws) {
+          ws.close();
+        }
         break;
+
       default:
         break;
     }
@@ -88,14 +100,14 @@ const App = () => {
   };
 
   const handleSquareClick = (index) => {
-    if (!board[index]) {
+    if (board[index] === null && message === "Your move") {
       makeMove(index);
     }
   };
 
   const handleOpponentMove = (index) => {
     const newBoard = [...board];
-    newBoard[index] = "O"; // Assuming player is always X
+    newBoard[index] = "O";
     setBoard(newBoard);
     setMessage("Opponent moved");
   };
