@@ -99,12 +99,14 @@ class Player {
       console.log(command);
       if (command === "QUIT") {
         ws.close();
-      } else if (/^MOVE \d+$/.test(command)) {
-        const location = Number(command.substring(5));
+      } else if (command.startsWith("MOVE")) {
+        const location = Number(command.substring(5, 6));
+        const mark = command.substring(7, 8);
+        console.log(mark);
         try {
           game.move(location, this);
           this.send("VALID_MOVE");
-          this.opponent.send(`OTHER_PLAYER_MOVED ${location}`);
+          this.opponent.send(`OTHER_PLAYER_MOVED ${location} ${mark}`);
           if (this.game.hasWinner()) {
             this.send("VICTORY");
             this.opponent.send("DEFEAT");

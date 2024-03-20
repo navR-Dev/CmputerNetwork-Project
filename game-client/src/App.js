@@ -12,9 +12,10 @@ const App = () => {
   const handleServerMessage = (message) => {
     const parts = message.split(" ");
     const command = parts[0];
-
+    console.log(command);
     switch (command) {
       case "WELCOME":
+        setPlayerMark(parts[1]);
         setMessage(`Server: You are player ${parts[1]}`);
         break;
       case "MESSAGE":
@@ -24,7 +25,7 @@ const App = () => {
         setMessage("Server: Valid move. Waiting for the opponent...");
         break;
       case "OTHER_PLAYER_MOVED":
-        handleOpponentMove(parseInt(parts[1]));
+        handleOpponentMove(parseInt(parts[1]), parts[2]);
         break;
       case "OTHER_PLAYER_LEFT":
         setMessage("Server: Your opponent has left the game.");
@@ -95,10 +96,16 @@ const App = () => {
 
   const makeMove = (location) => {
     //console.log(location);
-    const moveCommand = `MOVE ${location}`;
+    const moveCommand = `MOVE ${location} ${playerMark}`;
     //console.log(moveCommand);
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(moveCommand);
+      console.log(playerMark);
+      setBoard((prevBoard) => {
+        const newBoard = [...prevBoard];
+        newBoard[location] = playerMark === "X" ? "X" : "O";
+        return newBoard;
+      });
     }
   };
 
@@ -111,10 +118,11 @@ const App = () => {
     }
   };
 
-  const handleOpponentMove = (index) => {
+  const handleOpponentMove = (index, pm) => {
+    console.log(pm);
     setBoard((prevBoard) => {
       const newBoard = [...prevBoard];
-      newBoard[index] = "X"; // Assuming opponent's move always marks 'X'
+      newBoard[index] = pm;
       return newBoard;
     });
     setMessage("Server: Opponent moved");
