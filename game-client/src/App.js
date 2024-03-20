@@ -7,6 +7,7 @@ const App = () => {
   const [board, setBoard] = useState(Array(9).fill(null));
   const [message, setMessage] = useState("");
   const [ws, setWs] = useState(null);
+  const [playerMark, setPlayerMark] = useState(null);
 
   const handleServerMessage = (message) => {
     const parts = message.split(" ");
@@ -111,19 +112,26 @@ const App = () => {
   };
 
   const handleOpponentMove = (index) => {
-    //const char c = "X";
-    const newBoard = [...board];
-    newBoard[index] = "X";
-    setBoard(newBoard);
+    setBoard((prevBoard) => {
+      const newBoard = [...prevBoard];
+      newBoard[index] = "X"; // Assuming opponent's move always marks 'X'
+      return newBoard;
+    });
     setMessage("Server: Opponent moved");
     setTimeout(() => setMessage("Server: Your move"), 2000);
   };
 
-  const updateBoardState = (payload) => {
-    const newBoard = payload.split("\n").map((row) => row.split(" "));
+  /*const updateBoardState = (payload) => {
+    const newBoard = payload
+      .split("\n")
+      .map((row) => row.split(" ").map((cell) => (cell === "0" ? null : cell))); // Convert "0" to null
     setBoard(newBoard);
-  };
 
+    // Send updated board state to both players
+    [game.playerX, game.playerO].forEach((player) => {
+      player.send("BOARD_STATE\n" + payload);
+    });
+  };*/
   const renderSquare = (index) => {
     return (
       <div className="square" onClick={() => handleSquareClick(index)}>

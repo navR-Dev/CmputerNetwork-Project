@@ -78,10 +78,11 @@ class Player {
     this.ws = ws;
     this.mark = mark;
     this.gameRef = game;
+    this.isPlayer1 = mark === "X";
 
     this.send(`WELCOME ${mark}`);
 
-    if (mark === "X") {
+    if (this.isPlayer1) {
       game.currentPlayer = this;
       this.send("MESSAGE Waiting for opponent to connect");
     } else {
@@ -118,8 +119,10 @@ class Player {
             [this, this.opponent].forEach((p) => p.send("TIE"));
             this.gameRef.gameEnded();
           } else {
-            this.sendBoardState();
-            this.opponent.sendBoardState();
+            const updatedBoardState = this.getUpdatedBoardState();
+            [this, this.opponent].forEach((player) => {
+              player.send(updatedBoardState);
+            });
           }
         } catch (e) {
           this.send(`MESSAGE ${e.message}`);
@@ -139,6 +142,12 @@ class Player {
 
   send(message) {
     this.ws.send(message);
+  }
+
+  getUpdatedBoardState() {
+    return (
+      "BOARD_STATE\n" + this.game.board.map((row) => row.join(" ")).join("\n")
+    );
   }
 
   sendBoardState() {
