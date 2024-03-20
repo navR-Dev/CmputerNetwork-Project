@@ -8,9 +8,68 @@ const App = () => {
   const [message, setMessage] = useState("");
   const [ws, setWs] = useState(null);
 
+  const handleServerMessage = (message) => {
+    const parts = message.split(" ");
+    const command = parts[0];
+
+    switch (command) {
+      case "WELCOME":
+        setMessage(`Server: You are player ${parts[1]}`);
+        break;
+      case "MESSAGE":
+        setMessage(`Server: ${message.substring(8)}`);
+        break;
+      case "VALID_MOVE":
+        setMessage("Server: Valid move. Waiting for the opponent...");
+        break;
+      case "OTHER_PLAYER_MOVED":
+        handleOpponentMove(parseInt(parts[1]));
+        break;
+      case "OTHER_PLAYER_LEFT":
+        setMessage("Server: Your opponent has left the game.");
+        if (ws) {
+          ws.close();
+        }
+        break;
+      case "VICTORY":
+        setMessage("Server: Congratulations! You won!");
+        if (ws) {
+          ws.close();
+        }
+        break;
+      case "DEFEAT":
+        setMessage("Server: Sorry, you lost. Better luck next time.");
+        if (ws) {
+          ws.close();
+        }
+        break;
+      case "TIE":
+        setMessage("Server: It's a tie! The game is over.");
+        if (ws) {
+          ws.close();
+        }
+        break;
+      case "GAME_ENDED":
+        setMessage("Server: The game has ended.");
+        if (ws) {
+          ws.close();
+        }
+        break;
+      case "VICTORY_MESSAGE":
+        setMessage("Server: Congratulations! You won!");
+        if (ws) {
+          ws.close();
+        }
+        break;
+
+      default:
+        break;
+    }
+  };
+
   useEffect(() => {
     const newWs = new WebSocket("ws://192.168.1.40:58901");
-    console.log("Connecting");
+    //console.log("Connecting");
 
     newWs.onopen = () => {
       console.log("Connected to Tic Tac Toe Server");
@@ -27,89 +86,37 @@ const App = () => {
 
     setWs(newWs);
 
-    /*return () => {
-      console.log("Closing");
+    return () => {
+      //console.log("Closing");
       newWs.close();
-    };*/
+    };
   }, []);
 
-  const handleServerMessage = (message) => {
-    const parts = message.split(" ");
-    const command = parts[0];
-
-    switch (command) {
-      case "WELCOME":
-        setMessage(`You are player ${parts[1]}`);
-        break;
-      case "MESSAGE":
-        setMessage(`Server: ${message.substring(8)}`);
-        break;
-      case "VALID_MOVE":
-        setMessage("Valid move. Waiting for the opponent...");
-        break;
-      case "OTHER_PLAYER_MOVED":
-        handleOpponentMove(parseInt(parts[1]));
-        break;
-      case "OTHER_PLAYER_LEFT":
-        setMessage("Your opponent has left the game.");
-        if (ws) {
-          ws.close();
-        }
-        break;
-      case "VICTORY":
-        setMessage("Congratulations! You won!");
-        if (ws) {
-          ws.close();
-        }
-        break;
-      case "DEFEAT":
-        setMessage("Sorry, you lost. Better luck next time.");
-        if (ws) {
-          ws.close();
-        }
-        break;
-      case "TIE":
-        setMessage("It's a tie! The game is over.");
-        if (ws) {
-          ws.close();
-        }
-        break;
-      case "GAME_ENDED":
-        setMessage("The game has ended.");
-        if (ws) {
-          ws.close();
-        }
-        break;
-      case "VICTORY_MESSAGE":
-        setMessage("Congratulations! You won!");
-        if (ws) {
-          ws.close();
-        }
-        break;
-
-      default:
-        break;
-    }
-  };
-
   const makeMove = (location) => {
+    //console.log(location);
     const moveCommand = `MOVE ${location}`;
+    //console.log(moveCommand);
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(moveCommand);
     }
   };
 
   const handleSquareClick = (index) => {
-    if (board[index] === null && message === "Your move") {
+    console.log(ws.readyState);
+    console.log(message);
+    if (board[index] === null && message === "Server: Your move") {
+      //console.log("sending move");
       makeMove(index);
     }
   };
 
   const handleOpponentMove = (index) => {
+    //const char c = "X";
     const newBoard = [...board];
-    newBoard[index] = "O";
+    newBoard[index] = "X";
     setBoard(newBoard);
-    setMessage("Opponent moved");
+    setMessage("Server: Opponent moved");
+    setTimeout(() => setMessage("Server: Your move"), 2000);
   };
 
   const updateBoardState = (payload) => {

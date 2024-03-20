@@ -21,6 +21,7 @@ class Game {
     this.currentPlayer = null;
     this.playerX = null;
     this.playerO = null;
+    this.gameOver = false;
   }
 
   move(location, player) {
@@ -59,6 +60,7 @@ class Game {
   }
 
   gameEnded() {
+    this.gameOver = true;
     this.playerX = null;
     this.playerO = null;
     this.currentPlayer = null;
@@ -75,6 +77,7 @@ class Player {
     this.game = game;
     this.ws = ws;
     this.mark = mark;
+    this.gameRef = game;
 
     this.send(`WELCOME ${mark}`);
 
@@ -89,6 +92,10 @@ class Player {
 
     ws.on("message", (message) => {
       const command = message.toString("utf-8").trim();
+      if (game.gameOver) {
+        return;
+      }
+      console.log(command);
       if (command === "QUIT") {
         ws.close();
       } else if (/^MOVE \d+$/.test(command)) {
@@ -100,10 +107,16 @@ class Player {
           if (this.game.hasWinner()) {
             this.send("VICTORY");
             this.opponent.send("DEFEAT");
-            this.gameEnded();
+            setTimeout(() => {
+              [this, this.opponent].forEach((player) => {
+                player.send("GAME_ENDED");
+                player.ws.close();
+              });
+            }, 2000);
+            this.gameRef.gameEnded();
           } else if (this.game.boardFilledUp()) {
             [this, this.opponent].forEach((p) => p.send("TIE"));
-            this.gameEnded();
+            this.gameRef.gameEnded();
           } else {
             this.sendBoardState();
             this.opponent.sendBoardState();
@@ -111,13 +124,15 @@ class Player {
         } catch (e) {
           this.send(`MESSAGE ${e.message}`);
         }
+      } else if (command.startsWith("BOARD_STATE")) {
+        updateBoardState(command.substring(11));
       }
     });
 
     ws.on("close", () => {
       try {
         this.opponent.send("OTHER_PLAYER_LEFT");
-        this.game.gameEnded();
+        this.gameRef.gameEnded();
       } catch (e) {}
     });
   }
@@ -142,7 +157,7 @@ wss.on("connection", (ws) => {
   console.log("Client Connected!");
 
   clients.push(ws);
-  console.log(clients.length);
+  //console.log(clients.length);
 
   if (clients.length === 1) {
     game = new Game();
